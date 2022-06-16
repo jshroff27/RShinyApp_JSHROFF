@@ -74,30 +74,29 @@ logR_bal_preds_class <- predict(model_logR_bal, newdata = dat_tst)
 cm_logR_bal <- confusionMatrix(logR_bal_preds_class, dat_tst$stroke)
 
 
-#SVM Model
-model_svm_bal <- train(stroke ~., 
+# gbm model - balanced
+model_gbm_bal <- train(stroke ~., 
                        data = dat_trn_bal, 
-                       method = "svmRadial",
+                       method = "gbm",
+                       verbose = F,
+                       metric = "Accuracy",
                        preProcess = c("center", "scale"),
-                       trControl = trainControl(method = "cv", number = 10, 
-                                                classProbs = T),
+                       trControl = trainControl(method = "cv", number = 10),
                        tuneLength = 10)
 
-preds_svm_bal <- predict(model_svm_bal, newdata = dat_tst, type = "prob")
-svm_bal_preds_class <- predict(model_svm_bal, newdata = dat_tst)
-cm_svm_bal <- confusionMatrix(svm_bal_preds_class, dat_tst$stroke)
+preds_gbm_bal <- predict(model_gbm_bal, newdata = dat_tst, type = "prob")
+gbm_bal_preds_class <- predict(model_gbm_bal, newdata = dat_tst)
+cm_gbm_bal <- confusionMatrix(gbm_bal_preds_class, dat_tst$stroke)
 
 
 # aggregate model metrics
-model_names <- c("cm_logR_bal", "cm_rf_bal", "cm_svm_bal", "cm_gbm_bal")
+model_names <- c("cm_logR_bal", "cm_gbm_bal")
 
 metrics_model <- bind_rows(cm_logR_bal$byClass,
-                           # cm_rf_bal$byClass,
-                           cm_svm_bal$byClass,
-                           # cm_gbm_bal$byClass,
+                           cm_gbm_bal$byClass,
                            .id = 'Model') %>%
     mutate(model = c("Logistic.Regression.Balanced",
-                     "Support.Vector.Machines.Balanced"))
+                     "Gradient.Boosting.Balanced"))
 
 metrics_model <- metrics_model %>%
     rename_all(funs(make.names(.))) %>%
@@ -107,7 +106,7 @@ metrics_model <- metrics_model %>%
 
 # ROC Curves
 names_preds <- c("preds_logR_bal",
-                 "preds_svm_bal")
+                 "preds_gbm_bal")
 
 metrics_roc <- list()
 
